@@ -1,67 +1,79 @@
-import mongoose, {Schema} from "mongoose"
-import bcrypt from "bcrypt"
-import jwt from "jsonwebtoken"
+import mongoose, { Schema } from "mongoose";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
+/**
+ * Mongoose schema for the User model.
+ * This schema defines the structure and behavior of user documents in the database.
+ */
 const UserSchema = new mongoose.Schema(
     {
         username: {
             type: String,
-            required: true,
-            unique: true,
-            lowercase: true,
-            trim: true,
-            index: true
+            required: true,  
+            unique: true,  
+            lowercase: true,  
+            trim: true,  
+            index: true 
         },
         email: {
             type: String,
-            required: true,
-            unique: true,
-            lowercase: true,
-            trim: true,
+            required: true,  
+            unique: true,  
+            lowercase: true,  
+            trim: true,  
         },
         fullName: {
             type: String,
-            required: true,
-            trim: true,
-            index: true
+            required: true,  
+            trim: true,  
+            index: true 
         },
         avatar: {
-            type: String, // cloudinary link
+            type: String,  
             required: true
         },
         coverImage: {
-            type: String, // cloudinary link
+            type: String, 
         },
         password: {
             type: String,
-            required: [true, 'Password is required']
+            required: [true, 'Password is required']  // Password is required with a custom error message.
         },
         watchHistory: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "Video"
+                ref: "Video"  // Reference to the Video model, storing user's watch history.
             }
         ],
         refreshToken: {
-            type: String
+            type: String  // Refresh token for maintaining session across requests.
         }
     },
     {
-        timestamps: true
+        timestamps: true  // Automatically manage `createdAt` and `updatedAt` fields.
     }
-)
+);
 
+/**
+ * Pre-save middleware to hash the user's password before saving it to the database.
+ * This only runs if the password field is modified.
+ */
 UserSchema.pre("save", async function (next) {
-    if(!this.isModified(password)) return next()
-    this.password = bcrypt.hash(this.password, 10)
-    next()
-})
+    if (!this.isModified(password)) return next();  // If password is not modified, skip hashing.
+    this.password = bcrypt.hash(this.password, 10);  // Hash the password with a salt factor of 10.
+    next();  // Proceed to save the document.
+});
 
 UserSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password)
-}
+    return await bcrypt.compare(password, this.password);
+};
 
-UserSchema.methods.generateAccessToken = function() {
+/**
+ * Method to generate a JWT access token for the user.
+ * The token includes the user's ID, username, email, and full name.
+*/
+UserSchema.methods.generateAccessToken = function () {
    return jwt.sign(
         {
             _id: this._id,
@@ -69,23 +81,27 @@ UserSchema.methods.generateAccessToken = function() {
             email: this.email,
             fullName: this.fullName
         },
-        process.env.ACCESS_TOKEN_SECRET,
+        process.env.ACCESS_TOKEN_SECRET,  // Secret key for signing the access token.
         {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY  // Token expiry time.
         }
-    )
-}
+    );
+};
 
-UserSchema.methods.generateRefreshToken = function() {
+/**
+ * Method to generate a JWT refresh token for the user.
+ * The token includes only the user's ID.
+*/
+UserSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id,
         },
-        process.env.REFRESH_TOKEN_SECRET,
+        process.env.REFRESH_TOKEN_SECRET,  // Secret key for signing the refresh token.
         {
-            expiresIn: process.env.EXPIRY
+            expiresIn: process.env.EXPIRY  // Token expiry time.
         }
-    )
-}
+    );
+};
 
-export const User = mongoose.model("User", UserSchema)
+export const User = mongoose.model("User", UserSchema);
