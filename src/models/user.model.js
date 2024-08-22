@@ -62,7 +62,7 @@ const UserSchema = new mongoose.Schema(
  */
 UserSchema.pre("save", async function (next) {
     if (!this.isModified(password)) return next();  // If password is not modified, skip hashing.
-    this.password = bcrypt.hash(this.password, 10);  // Hash the password with a salt factor of 10.
+    this.password = await bcrypt.hash(this.password, 10);  // Hash the password with a salt factor of 10.
     next();  // Proceed to save the document.
 });
 

@@ -4,11 +4,10 @@
  * are caught and passed to the next middleware.
  *
  * requestHandler - The asynchronous route handler function.
- * @returns {Function} - A new function that wraps the original handler with error handling.
 */
 
 const asyncHandler = (requestHandler) => {
-    (req, res, next) => {
+    return (req, res, next) => {
         Promise.resolve(requestHandler(req, res, next))
             .catch((err) => next(err));  // Pass any errors to the next middleware (typically an error handler).
     };
