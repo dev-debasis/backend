@@ -4,7 +4,6 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 
-
 const registerUser = asyncHandler( async (req, res) => {
    
     
@@ -21,17 +20,19 @@ const registerUser = asyncHandler( async (req, res) => {
     9. Return response
     */
 
-    // Tsking user details with postman
+    // Taking user details from frontend through postman
     const {username, email, fullName, password, } = req.body
 
-    // Validating if any field is empty or not?
-    if([username, email, fullName, password].some((field) => field?.trim() === "")){
+    // Validating the user given fields if any field is empty or not?
+    if(
+        [fullName, email, username, password].some((field) => field?.trim() === "")
+    ){
         throw new ApiError(400, "All fields are required")
     }
 
-    //Checking user is already exist or not?
-    const isUserExit = User.findOne({
-        $or: [{ email }, { username }]
+    // checking if the user is already exist or not
+    const isUserExit = await User.findOne({
+        $or: [{ username }, { email}]
     })
 
     if(isUserExit){
@@ -46,10 +47,13 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new ApiError(400, "Avatar file is required")
     }
 
+    // Uploading the images from local server to the cloudinary server
     
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
+    // After uploading we will delete the files from our server.
+    
     if(!avatar){
         throw new ApiError(400, "Uploading Avatar on cloudinary failed")
     }
@@ -66,7 +70,7 @@ const registerUser = asyncHandler( async (req, res) => {
         }
     )
 
-    const createdUser = await User.findById(User._id).select("-password -refreshToken")
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
     if(!createdUser){
         throw new ApiError(500, "Something went wrong while registering the user ")
@@ -85,3 +89,6 @@ const registerUser = asyncHandler( async (req, res) => {
 export {
     registerUser,
 }
+
+
+

@@ -14,8 +14,7 @@ const UserSchema = new mongoose.Schema(
             unique: true,  
             lowercase: true,
             trim: true,
-            
-            
+            index: true
         },
         email: {
             type: String,
@@ -31,7 +30,7 @@ const UserSchema = new mongoose.Schema(
             index: true 
         },
         avatar: {
-            type: String,  
+            type: String,   // cloudinary url
             required: true
         },
         coverImage: {
@@ -61,7 +60,7 @@ const UserSchema = new mongoose.Schema(
  * This only runs if the password field is modified.
  */
 UserSchema.pre("save", async function (next) {
-    if (!this.isModified(password)) return next();  // If password is not modified, skip hashing.
+    if (!this.isModified("password")) return next();  // If password is not modified, skip hashing.
     this.password = await bcrypt.hash(this.password, 10);  // Hash the password with a salt factor of 10.
     next();  // Proceed to save the document.
 });
@@ -80,11 +79,11 @@ UserSchema.methods.generateAccessToken = function () {
             _id: this._id,
             username: this.username,
             email: this.email,
-            fullName: this.fullName
+            fullName: this.fullName,
         },
         process.env.ACCESS_TOKEN_SECRET,  // Secret key for signing the access token.
         {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY  // Token expiry time.
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY  // Token expiry time
         }
     );
 };
@@ -100,7 +99,7 @@ UserSchema.methods.generateRefreshToken = function () {
         },
         process.env.REFRESH_TOKEN_SECRET,  // Secret key for signing the refresh token.
         {
-            expiresIn: process.env.EXPIRY  // Token expiry time.
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY  // Token expiry time.
         }
     );
 };
