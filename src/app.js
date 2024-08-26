@@ -21,7 +21,7 @@ app.use(urlencoded({ extended: true, limit: "20kb" }));
 app.use(express.static("public"));
 
 // Middleware for parsing cookies attached to client requests
-app.use(cookieParser());
+app.use(cookieParser())
 
 
 // Import Router
