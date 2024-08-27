@@ -7,8 +7,8 @@ const subscriptionSchema = new Schema({
         ref: "User"
     },
     subscriber:{
-        type: mongoose.Schema.ObjectId,
-        ref: User
+        type: Schema.Types.ObjectId,
+        ref: "User"
     }
 },{timestamps: true})
 

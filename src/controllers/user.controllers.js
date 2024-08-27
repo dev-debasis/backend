@@ -294,9 +294,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   // take new avatar 
   // upload it on cloudinary save the link in any variable 
   // update the old link with current link
-  // delete the old file from cloudinary
 
-  const avatarLocalPath = req.files?.path;
+  const avatarLocalPath = req.file?.path;
 
   if(!avatarLocalPath){
     throw new ApiError(400, "Avatar file is missing")
@@ -324,7 +323,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
 
-  const coverImageLocalPath = req.files?.path;
+  const coverImageLocalPath = req.file?.path;
 
   if(!coverImageLocalPath){
     throw new ApiError(400, "CoverImage file is missing")
@@ -351,6 +350,77 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   .json( new ApiResponse(200, user, "Cover Image updated successfully"))
 })
 
+// When anyone visit one's channel(profile) what we wanna show there will be controlled by this controller
+const getUserChannelProfile = asyncHandler(async (req,res) => {
+  const { username } = req.params
+  if(!username?.trim()){
+    throw new ApiError(400, "Username is missing")
+  }
+
+const channel = await User.aggregate([
+    {
+      $match: {username}
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers"
+      }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo"
+      }
+    },
+    {
+      $addFields: {
+        subscriberCount: {
+          $size: "subscribers"
+        },
+        subscribedToCount:{
+          $size: "subscribedTo"
+        },
+        isSubscribed: {
+          $cond:{
+            if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+            then: true,
+            else: false
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        coverImage: 1,
+        avatar: 1,
+        fullName: 1,
+        username: 1,
+        subscriberCount: 1,
+        subscribedToCount: 1,
+        email: 1,
+        createdAt: 1
+      }
+    }
+  ])
+
+  // Debugging & understanding purpose
+console.log(`Channel: ${channel}`);
+
+if(!channel?.length){
+  throw new ApiError(404, "Channel doesn't exist")
+}
+
+return res
+.status(200)
+.json( new ApiResponse(200, channel[0], "Channel fetched successfully"))
+  
+})
+
 export { 
   registerUser, 
   loginUser, 
@@ -360,6 +430,7 @@ export {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
-  updateUserCoverImage
+  updateUserCoverImage,
+  getUserChannelProfile
 
  };
